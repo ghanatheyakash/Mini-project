@@ -1,0 +1,56 @@
+import pandas as pd 
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+
+
+
+dataset = pd.read_csv('C:/Users/sravan/Desktop/2021/GItam - mini/review2/20 diabetic/diabetes.csv')
+dataset.head()
+dataset.info()
+dataset.describe().T
+sns.countplot(x = 'Outcome',data = dataset)
+
+
+dataset_new = dataset
+
+dataset_new[["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]] = dataset_new[["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]].replace(0, np.NaN)
+
+dataset_new.isnull().sum()
+dataset_new["Glucose"].fillna(dataset_new["Glucose"].mean(), inplace = True)
+dataset_new["BloodPressure"].fillna(dataset_new["BloodPressure"].mean(), inplace = True)
+dataset_new["SkinThickness"].fillna(dataset_new["SkinThickness"].mean(), inplace = True)
+dataset_new["Insulin"].fillna(dataset_new["Insulin"].mean(), inplace = True)
+dataset_new["BMI"].fillna(dataset_new["BMI"].mean(), inplace = True)
+
+from sklearn.preprocessing import MinMaxScaler
+sc = MinMaxScaler(feature_range = (0, 1))
+dataset_scaled = sc.fit_transform(dataset_new)
+
+dataset_scaled = pd.DataFrame(dataset_scaled)
+X = dataset_scaled.iloc[:, [1, 4, 5, 7]].values
+Y = dataset_scaled.iloc[:, 8].values
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.20, random_state = 42, stratify = dataset_new['Outcome'] )
+
+from sklearn.ensemble import RandomForestClassifier
+ranfor = RandomForestClassifier(n_estimators = 11, criterion = 'entropy', random_state = 42)
+ranfor.fit(X_train, Y_train)
+Y_pred_ranfor = ranfor.predict(X_test)
+
+from sklearn.svm import SVC
+svc = SVC(kernel = 'linear', random_state = 42)
+svc.fit(X_train, Y_train)
+Y_pred_svc = svc.predict(X_test)
+
+accuracy_ranfor = accuracy_score(Y_test, Y_pred_ranfor)
+accuracy_svc = accuracy_score(Y_test, Y_pred_svc)
+
+print("Support Vector Classifier: " + str(accuracy_svc * 100))
+print("Random Forest: " + str(accuracy_ranfor * 100))
+
+from sklearn.metrics import classification_report
+print(classification_report(Y_test, Y_pred_svc))
